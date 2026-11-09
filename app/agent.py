@@ -123,7 +123,9 @@ def approve_deferred_tools(target: Agent, result, question: str):
         for call in result.output.approvals:
             print(f"\n保存を許可しますか？ 引数: {call.args}")
             answer = input("[y/N] ").strip().lower()
-            approvals[call.tool_call_id] = answer in {"y", "yes"}
+            if answer not in {"y", "yes"}:
+                return "学習記録の保存が拒否されました（ツールの実行が拒否されたため保存できませんでした）。"
+            approvals[call.tool_call_id] = True
         result = target.run_sync(
             question,
             model=build_model(),
@@ -158,6 +160,9 @@ def main() -> None:
     except ModelHTTPError as e:
         print(api_error_message(e.status_code, str(e.body)[:200]))
         raise SystemExit(1)
+    if isinstance(result, str):
+        print(result)
+        return
     print(result.output)
     if args.trace:
         print_trace(result)
